@@ -46,8 +46,8 @@ class SendHeaders implements ObserverInterface
         RequestInterface $request,
         Config $config
     ) {
-        $this->config = $config;
-        $this->request = $request;
+        $this->config        = $config;
+        $this->request       = $request;
         $this->httpResponse  = $httpResponse;
         $this->headerManager = $headerManager;
         $this->scopeConfig   = $scopeConfig;
@@ -55,25 +55,25 @@ class SendHeaders implements ObserverInterface
 
     public function execute(Observer $observer): void
     {
-        $httpResponse = $this->httpResponse;
+        try {
+            $httpResponse = $this->httpResponse;
+            $this->shouldAddLinkHeader($httpResponse);
 
-        if(!$this->shouldAddLinkHeader($httpResponse))
-        {
-            return;
+            //Set default header to disable buffering
+            $this->setDefaultHeaderToDisableBuffering($httpResponse);
+
+            //Add preload link headers
+            $this->addPreloadLinkHeaders($httpResponse);
+
+            //Calculate httpResponse headers based on HeaderProviders
+            $this->headerManager->beforeSendResponse($httpResponse);
+
+            //@todo: add headers coming from CSP module (or other module with same architecture)
+
+            $this->sendAllHeadersToBrowser($httpResponse);
+        } catch (\RuntimeException $e) {
+
         }
-
-        //Set default header to disable buffering
-        $this->setDefaultHeaderToDisableBuffering($httpResponse);
-
-        //Add preload link headers
-        $this->addPreloadLinkHeaders($httpResponse);
-
-        //Calculate httpResponse headers based on HeaderProviders
-        $this->headerManager->beforeSendResponse($httpResponse);
-
-        //@todo: add headers coming from CSP module (or other module with same architecture)
-
-        $this->sendAllHeadersToBrowser($httpResponse);
     }
 
     protected function _getStaticUris($type): array
@@ -85,8 +85,8 @@ class SendHeaders implements ObserverInterface
 
     protected function addPreloadLinkHeaders(Http $httpResponse): void
     {
-        $stylesUri    = $this->_getStaticUris('style');
-        $scriptsUri   = $this->_getStaticUris('script');
+        $stylesUri  = $this->_getStaticUris('style');
+        $scriptsUri = $this->_getStaticUris('script');
 
         $linkHeader = [];
         foreach ($stylesUri as $uri) {
@@ -119,20 +119,24 @@ class SendHeaders implements ObserverInterface
         flush();
     }
 
-    protected function shouldAddLinkHeader(Http $response): bool
+    /**
+     * @param Http $response
+     * @throw \RuntimeException
+     *
+     * @return void
+     */
+    protected function shouldAddLinkHeader(Http $response): void
     {
         if (!$this->config->isEnabled()) {
-            return false;
+            throw new \RuntimeException('Early Hints config not enabled');
         }
 
         if ($response->isRedirect()) {
-            return false;
+            throw new \RuntimeException('Response is redirection');
         }
 
         if ($this->request instanceof Proxy && $this->request->isAjax()) {
-            return false;
+            throw new \RuntimeException('Request is ajax');
         }
-
-        return true;
     }
 }
