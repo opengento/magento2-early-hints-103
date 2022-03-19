@@ -4,6 +4,9 @@
         <system>
             <opengento_earlyhints>
                 <enabled>1</enabled>
+                <pathinfo_allowed><![CDATA[/catalog/product/view
+/catalog/category/view
+/cms/index/index]]></pathinfo_allowed>
             </opengento_earlyhints>
         </system>
     </default>

@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 namespace Opengento\EarlyHints\Observer;
 
+use Magento\Framework\App\ActionInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\Http\Proxy;
 use Magento\Framework\App\RequestInterface;
@@ -10,6 +11,7 @@ use Magento\Framework\App\Response\HeaderManager;
 use Magento\Framework\App\Response\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\View\LayoutInterface;
 use Opengento\EarlyHints\Model\Config;
 
 class SendHeaders implements ObserverInterface
@@ -39,13 +41,20 @@ class SendHeaders implements ObserverInterface
      */
     protected Config $config;
 
+    /**
+     * @var LayoutInterface
+     */
+    protected LayoutInterface $layout;
+
     public function __construct(
         Http $httpResponse,
         HeaderManager $headerManager,
         ScopeConfigInterface $scopeConfig,
         RequestInterface $request,
-        Config $config
+        Config $config,
+        LayoutInterface $layout
     ) {
+        $this->layout        = $layout;
         $this->config        = $config;
         $this->request       = $request;
         $this->httpResponse  = $httpResponse;
@@ -57,7 +66,7 @@ class SendHeaders implements ObserverInterface
     {
         try {
             $httpResponse = $this->httpResponse;
-            $this->shouldAddLinkHeader($httpResponse);
+            $this->shouldAddLinkHeader($httpResponse, $observer->getEvent()->getControllerAction());
 
             //Set default header to disable buffering
             $this->setDefaultHeaderToDisableBuffering($httpResponse);
@@ -125,11 +134,14 @@ class SendHeaders implements ObserverInterface
      *
      * @return void
      */
-    protected function shouldAddLinkHeader(Http $response): void
+    protected function shouldAddLinkHeader(Http $response, ActionInterface $action): void
     {
         if (!$this->config->isEnabled()) {
             throw new \RuntimeException('Early Hints config not enabled');
         }
+
+        //check path info is allowed
+        $this->checkPathInfoIsAllowed($action);
 
         if ($response->isRedirect()) {
             throw new \RuntimeException('Response is redirection');
@@ -137,6 +149,29 @@ class SendHeaders implements ObserverInterface
 
         if ($this->request instanceof Proxy && $this->request->isAjax()) {
             throw new \RuntimeException('Request is ajax');
+        }
+    }
+
+    /**
+     * @param ActionInterface $action
+     *
+     * @return void
+     */
+    protected function checkPathInfoIsAllowed(ActionInterface $action): void
+    {
+        $hasPathAllowed = false;
+        $pathInfo       = $action->getRequest()->getPathInfo();
+        if (!$pathInfo) {
+            $pathInfo = '/' . $action->getRequest()->getModuleName() . '/' . $action->getRequest()->getControllerName() . '/' . $action->getRequest()->getActionName();
+        }
+
+        foreach ($this->config->getPathInfoAllowed() as $allowedPath) {
+            if (\strpos($pathInfo, $allowedPath) !== false) {
+                $hasPathAllowed = true;
+            }
+        }
+        if (!$hasPathAllowed) {
+            throw new \RuntimeException('Early Hint Layout Handles not allowed');
         }
     }
 }

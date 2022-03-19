@@ -46,6 +46,11 @@ class Config
         return (bool) $this->scopeConfig->getValue('system/opengento_earlyhints/enabled');
     }
 
+    public function getPathInfoAllowed(): array
+    {
+        return \explode("\n", (string) str_replace("\r", '', $this->scopeConfig->getValue('system/opengento_earlyhints/pathinfo_allowed')));
+    }
+
     /**
      * @param string $module
      *

@@ -15,6 +15,10 @@
                     <label>Styles URIs</label>
                     <comment><![CDATA[Add one script per line with absolute URI. The exact same URL as the one in <head> tag]]></comment>
                 </field>
+                <field id="pathinfo_allowed" translate="label comment" type="textarea" sortOrder="2" showInDefault="1">
+                    <label>Path Allowed</label>
+                    <comment><![CDATA[Path allowed where Early Hints are enabled. Controller with one of these path will trigger Early Hints headers.]]></comment>
+                </field>
             </group>
         </section>
     </system>
