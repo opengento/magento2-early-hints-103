@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../Magento/Store/etc/config.xsd">
+    <default>
+        <system>
+            <opengento_earlyhints>
+                <enabled>1</enabled>
+                <pathinfo_allowed><![CDATA[/catalog/product/view
+/catalog/category/view
+/cms/index/index]]></pathinfo_allowed>
+            </opengento_earlyhints>
+        </system>
+    </default>
+</config>
