@@ -1,0 +1,21 @@
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="system">
+            <group id="opengento_earlyhints" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Opengento Early Hints</label>
+                <field id="enabled" translate="label" type="select" sortOrder="1" showInDefault="1">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="uri_script" translate="label comment" type="textarea" sortOrder="1" showInDefault="1">
+                    <label>Scripts URIs</label>
+                    <comment><![CDATA[Add one script per line with absolute URI. The exact same URL as the one in <head> tag]]></comment>
+                </field>
+                <field id="uri_style" translate="label comment" type="textarea" sortOrder="2" showInDefault="1">
+                    <label>Styles URIs</label>
+                    <comment><![CDATA[Add one script per line with absolute URI. The exact same URL as the one in <head> tag]]></comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

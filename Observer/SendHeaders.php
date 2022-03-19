@@ -4,10 +4,13 @@ declare(strict_types = 1);
 namespace Opengento\EarlyHints\Observer;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Request\Http\Proxy;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\Response\HeaderManager;
 use Magento\Framework\App\Response\Http;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Opengento\EarlyHints\Model\Config;
 
 class SendHeaders implements ObserverInterface
 {
@@ -27,28 +30,37 @@ class SendHeaders implements ObserverInterface
     protected ScopeConfigInterface $scopeConfig;
 
     /**
-     * @param Http                 $httpResponse
-     * @param HeaderManager        $headerManager
-     * @param ScopeConfigInterface $scopeConfig
+     * @var RequestInterface
      */
+    protected RequestInterface $request;
+
+    /**
+     * @var Config
+     */
+    protected Config $config;
+
     public function __construct(
         Http $httpResponse,
         HeaderManager $headerManager,
-        ScopeConfigInterface $scopeConfig
+        ScopeConfigInterface $scopeConfig,
+        RequestInterface $request,
+        Config $config
     ) {
+        $this->config = $config;
+        $this->request = $request;
         $this->httpResponse  = $httpResponse;
         $this->headerManager = $headerManager;
         $this->scopeConfig   = $scopeConfig;
     }
 
-    /**
-     * @param Observer $observer
-     *
-     * @return void
-     */
-    public function execute(Observer $observer)
+    public function execute(Observer $observer): void
     {
         $httpResponse = $this->httpResponse;
+
+        if(!$this->shouldAddLinkHeader($httpResponse))
+        {
+            return;
+        }
 
         //Set default header to disable buffering
         $this->setDefaultHeaderToDisableBuffering($httpResponse);
@@ -61,27 +73,16 @@ class SendHeaders implements ObserverInterface
 
         //@todo: add headers coming from CSP module (or other module with same architecture)
 
-        //Send all headers to browser
         $this->sendAllHeadersToBrowser($httpResponse);
     }
 
-    /**
-     * @param $type
-     *
-     * @return string[]
-     */
     protected function _getStaticUris($type): array
     {
-        $value = $this->scopeConfig->getValue('opengento/earlyhint/uri_' . $type);
+        $value = $this->config->getStaticUris($type);
 
-        return \explode("\n", $value);
+        return \explode("\n", \str_replace("\r", "", $value));
     }
 
-    /**
-     * @param Http  $httpResponse
-     *
-     * @return void
-     */
     protected function addPreloadLinkHeaders(Http $httpResponse): void
     {
         $stylesUri    = $this->_getStaticUris('style');
@@ -100,11 +101,6 @@ class SendHeaders implements ObserverInterface
         $httpResponse->setHeader('Link', \implode(',', $linkHeader));
     }
 
-    /**
-     * @param Http $httpResponse
-     *
-     * @return void
-     */
     protected function setDefaultHeaderToDisableBuffering(Http $httpResponse): void
     {
         $httpResponse->setHeader('Early-Hints', 'true');
@@ -114,11 +110,6 @@ class SendHeaders implements ObserverInterface
             'OpengentoBroadcast/1.0'); // for varnish no buffering (vcl have to be modified, check Readme.md)
     }
 
-    /**
-     * @param Http $httpResponse
-     *
-     * @return void
-     */
     protected function sendAllHeadersToBrowser(Http $httpResponse): void
     {
         $httpResponse->sendHeaders();
@@ -126,5 +117,22 @@ class SendHeaders implements ObserverInterface
         //@todo : find a better way to trigger header to be sent to browser
         echo '<div></div>';
         flush();
+    }
+
+    protected function shouldAddLinkHeader(Http $response): bool
+    {
+        if (!$this->config->isEnabled()) {
+            return false;
+        }
+
+        if ($response->isRedirect()) {
+            return false;
+        }
+
+        if ($this->request instanceof Proxy && $this->request->isAjax()) {
+            return false;
+        }
+
+        return true;
     }
 }
