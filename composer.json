@@ -20,6 +20,11 @@
             "name": "Anthony Grutter",
             "email": "anthony@bird.eu",
             "role": "maintainer"
+        },
+        {
+            "name": "Christophe Ferreboeuf",
+            "email": "christophe@crealoz.fr",
+            "role": "maintainer"
         }
     ],
     "version": "0.0.1",
