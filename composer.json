@@ -1,0 +1,35 @@
+{
+    "name": "opegento/module-early-hints-103",
+    "description": "Early Hints Headers for preloading static files while Magento is calculating his render.",
+    "type": "magento2-module",
+    "license": [
+        "MIT"
+    ],
+    "minimum-stability": "beta",
+    "config": {
+        "sort-packages": true
+    },
+    "authors": [
+        {
+            "name": "Opengento Team",
+            "email": "opengento@gmail.com",
+            "homepage": "https://opengento.fr/",
+            "role": "lead"
+        },
+        {
+            "name": "Anthony Grutter",
+            "email": "anthony@bird.eu",
+            "role": "maintainer"
+        }
+    ],
+    "version": "0.0.1",
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Opengento\\EarlyHints\\": ""
+        }
+    }
+}
+
